@@ -22,6 +22,30 @@ Invenio-VCS.
    upgrading
 
 
+Provider Guides
+---------------
+
+These docs provide configuration instructions specific to each VCS provider.
+
+.. toctree::
+
+    contrib/github
+    contrib/gitlab
+
+
+
+Provider Guides
+---------------
+
+These docs provide configuration instructions specific to each VCS provider.
+
+.. toctree::
+
+    contrib/github
+    contrib/gitlab
+
+
+
 API Reference
 -------------
 
