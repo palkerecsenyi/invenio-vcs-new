@@ -25,6 +25,13 @@ from all of them. Multiple instances of different providers as well as of the sa
 can be combined in this list, but each provider must have a unique ``id`` and ``credentials_key``.
 """
 
+VCS_PROVIDER_CONFIG_DICT = {}
+"""An optional dictionary of configuration overrides for RepositoryProviderFactory instances.
+
+This makes it possible to specify configuration values via environment variables rather than as
+class constructor parameters, allowing for easier secret setting.
+"""
+
 VCS_RELEASE_CLASS = "invenio_vcs.service:VCSRelease"
 """VCSRelease class to be used for release handling."""
 
@@ -62,3 +69,8 @@ def get_provider_by_id(id: str) -> "RepositoryServiceProviderFactory":
         if id == provider.id:
             return provider
     raise Exception(f"VCS provider with ID {id} not registered")
+
+
+def get_provider_config_override(id: str, app=current_app) -> dict:
+    """Get the config override dict for a provider by ID, or an empty dictionary by default."""
+    return app.config["VCS_PROVIDER_CONFIG_DICT"].get(id, {})
