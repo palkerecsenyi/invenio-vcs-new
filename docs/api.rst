@@ -9,6 +9,5 @@
 API Docs
 ========
 
-invenio_vcs
---------------
-
+.. automodule:: invenio_vcs.ext
+   :members:
