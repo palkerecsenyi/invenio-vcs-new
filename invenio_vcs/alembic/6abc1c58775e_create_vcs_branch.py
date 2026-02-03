@@ -14,6 +14,9 @@ from alembic import op
 # revision identifiers, used by Alembic.
 revision: str = "6abc1c58775e"
 down_revision: Union[str, Sequence[str], None] = None
+# We are creating a brand new branch invenio_vcs instead of continuing the existing invenio_github.
+# The new migrations do not assume anything about the existing tables and do not attempt to delete them.
+# Data must be migrated over manually or using the upgrade script.
 branch_labels: Union[str, Sequence[str], None] = ("invenio_vcs",)
 depends_on: Union[str, Sequence[str], None] = None
 
