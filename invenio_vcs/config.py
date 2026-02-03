@@ -49,8 +49,17 @@ VCS_RELEASE_CLASS = "invenio_vcs.service:VCSRelease"
 VCS_TEMPLATE_INDEX = "invenio_vcs/settings/index.html"
 """Repositories list template."""
 
+VCS_TEMPLATE_INDEX_ITEM = "invenio_vcs/settings/index_item.html"
+"""Repositories list item template."""
+
 VCS_TEMPLATE_VIEW = "invenio_vcs/settings/view.html"
 """Repository detail view template."""
+
+VCS_TEMPLATE_REPO_SWITCH = "invenio_vcs/settings/repo_switch.html"
+"""Repository toggle switch template."""
+
+VCS_TEMPLATE_RELEASE_ITEM = "invenio_vcs/settings/release_item.html"
+"""Release item template, used in the 'view' page."""
 
 VCS_ERROR_HANDLERS = None
 """Definition of the way specific exceptions are handled."""
