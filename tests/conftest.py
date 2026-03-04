@@ -260,7 +260,7 @@ def test_generic_owner(test_generic_user: GenericUser):
     return GenericOwner(
         test_generic_user.id,
         test_generic_user.username,
-        GenericOwnerType.Person,
+        GenericOwnerType.USER,
         display_name=test_generic_user.display_name,
     )
 

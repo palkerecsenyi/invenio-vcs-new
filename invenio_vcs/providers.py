@@ -235,7 +235,10 @@ class RepositoryServiceProvider(ABC):
         """
         Internal method for constructing the provider.
 
-        It's recommended to use `for_user` in the factory instead.
+        It's recommended to use `for_user` in the factory instead of calling this constructor directly.
+        For example:
+
+            GitHubProviderFactory().for_user(user_id)
         """
         self.factory = factory
         self.user_id = user_id
@@ -272,7 +275,10 @@ class RepositoryServiceProvider(ABC):
         """
         if not self.remote_account.extra_data.get("tokens", {}).get("webhook"):
             raise RemoteAccountDataNotSet(
-                self.user_id, _("Webhook data not found for user tokens (remote data).")
+                self.user_id,
+                _(
+                    "Webhook data not found for user's token. Please connect the account again."
+                ),
             )
 
         webhook_token = ProviderToken.query.filter_by(
@@ -387,7 +393,7 @@ class RepositoryServiceProvider(ABC):
     @abstractmethod
     def create_webhook(self, repository_id: str) -> str | None:
         """
-        Creates a new webhook for a given repository, trigerred by a "create release" event.
+        Creates a new webhook for a given repository, triggerred by a "create release" event.
 
         The URL destination is specified by `RepositoryServiceProvider.webhook_url`.
         Events must be delivered via an HTTP POST request with a JSON payload.
@@ -424,7 +430,11 @@ class RepositoryServiceProvider(ABC):
 
     @abstractmethod
     def resolve_release_zipball_url(self, release_zipball_url: str) -> str | None:
-        """TODO: why do we have this."""
+        """Applies any additional transformation to the zipball URL, for example choosing between multiple file versions.
+
+        The behaviour of this is specific to the VCS provider. In many cases, it might not be necessary whatsoever,
+        in which case it can be configured as a no-op (by simply returning the original `release_zipball_url`).
+        """
         raise NotImplementedError
 
     @abstractmethod

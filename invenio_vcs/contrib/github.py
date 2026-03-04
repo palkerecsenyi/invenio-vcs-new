@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # This file is part of Invenio.
-# Copyright (C) 2025 CERN.
+# Copyright (C) 2025-2026 CERN.
 #
 # Invenio is free software; you can redistribute it and/or modify it
 # under the terms of the MIT License; see LICENSE file for more details.
@@ -59,21 +59,23 @@ class GitHubProviderFactory(RepositoryServiceProviderFactory):
             repository_name="repository",
             repository_name_plural="repositories",
             release_docs_link="https://docs.github.com/en/repositories/releasing-projects-on-github/managing-releases-in-a-repository",
-            repo_list_message="If your organization's repositories do not show up in the list, please ensure you have enabled third-party access.",
+            repo_list_message=_(
+                "If your organization's repositories do not show up in the list, please ensure you have enabled third-party access."
+            ),
             repo_list_info_link="https://docs.github.com/en/organizations/managing-oauth-access-to-your-organizations-data/approving-oauth-apps-for-your-organization",
         )
 
-        self._config = dict()
-        self._config.update(
+        self._github_specific_config = dict()
+        self._github_specific_config.update(
             shared_secret="",
             insecure_ssl=False,
         )
-        self._config.update(config)
+        self._github_specific_config.update(config)
 
     def update_config_with_override(self, config_override: dict):
         """Allow overriding GitHub-specific config options."""
         super().update_config_override(config_override)
-        self._config.update(config_override.get("config", {}))
+        self._github_specific_config.update(config_override.get("config", {}))
 
     @property
     def remote_config(self):
@@ -91,7 +93,7 @@ class GitHubProviderFactory(RepositoryServiceProviderFactory):
 
         helper = GitHubOAuthSettingsHelper(
             title=self.name,
-            icon="fa fa-{}".format(self.icon),
+            icon=f"fa fa-{self.icon}",
             description=self.description,
             base_url=self.base_url,
             app_key=self.credentials_key,
@@ -108,7 +110,7 @@ class GitHubProviderFactory(RepositoryServiceProviderFactory):
     @property
     def config(self):
         """Returns the GitHub-specific config dict."""
-        return self._config
+        return self._github_specific_config
 
     def webhook_is_create_release_event(self, event_payload):
         """Three possible event types can correspond to a create release event."""
@@ -128,7 +130,7 @@ class GitHubProviderFactory(RepositoryServiceProviderFactory):
 
         But for some reason github3py does not include a mapping for this.
         So the only way to access it without making an additional request is to convert
-        the repo to a dict.
+        the repo to a dict. Hence, the repo needs to be passed in as a dict.
         """
         license_obj = gh_repo_dict.get("license")
         if license_obj is not None:
@@ -172,33 +174,31 @@ class GitHubProviderFactory(RepositoryServiceProviderFactory):
 
     def url_for_repository(self, repository_name: str) -> str:
         """URL to view a repository."""
-        return "{}/{}".format(self.base_url, repository_name)
+        return f"{self.base_url}/{repository_name}"
 
     def url_for_release(
         self, repository_name: str, release_id: str, release_tag: str
     ) -> str:
         """URL to view a release."""
-        return "{}/{}/releases/tag/{}".format(
-            self.base_url, repository_name, release_tag
-        )
+        return f"{self.base_url}/{repository_name}/releases/tag/{release_tag}"
 
     def url_for_tag(self, repository_name: str, tag_name: str):
         """URL to view a tag."""
-        return "{}/{}/tree/{}".format(self.base_url, repository_name, tag_name)
+        return f"{self.base_url}/{repository_name}/tree/{tag_name}"
 
     def url_for_new_release(self, repository_name: str):
         """URL for creating a new release."""
-        return "{}/{}/releases/new".format(self.base_url, repository_name)
+        return f"{self.base_url}/{repository_name}/releases/new"
 
     def url_for_new_file(self, repository_name: str, branch_name: str, file_name: str):
         """URL for creating a new file in the web editor."""
-        return "{}/{}/new/{}?filename={}".format(
-            self.base_url, repository_name, branch_name, file_name
+        return (
+            f"{self.base_url}/{repository_name}/new/{branch_name}?filename={file_name}"
         )
 
     def url_for_new_repo(self) -> str:
         """URL for creating a new repository."""
-        return "{}/new".format(self.base_url)
+        return f"{self.base_url}/new"
 
 
 class GitHubProvider(RepositoryServiceProvider):
@@ -295,6 +295,10 @@ class GitHubProvider(RepositoryServiceProvider):
         """Create a webhook using some custom GitHub-specific config options."""
         assert repository_id.isdigit()
 
+        repo = self._gh.repository_with_id(int(repository_id))
+        if repo is None:
+            return None
+
         hook_config = dict(
             url=self.webhook_url,
             content_type="json",
@@ -302,16 +306,14 @@ class GitHubProvider(RepositoryServiceProvider):
             insecure_ssl="1" if self.factory.config["insecure_ssl"] else "0",
         )
 
-        repo = self._gh.repository_with_id(int(repository_id))
-        if repo is None:
-            return None
+        # Find the first webhook with the same exact URL as
+        generic_hook = self.get_first_valid_webhook(repository_id)
 
-        hooks = (h for h in repo.hooks() if h.config.get("url", "") == self.webhook_url)
-        hook = next(hooks, None)
-
-        if not hook:
+        if not generic_hook:
             hook = repo.create_hook("web", hook_config, events=["release"])
         else:
+            hook = repo.hook(int(generic_hook.id))
+            assert hook is not None
             hook.edit(config=hook_config, events=["release"])
 
         return str(hook.id)
@@ -379,9 +381,9 @@ class GitHubProvider(RepositoryServiceProvider):
             return None
 
         owner_type = (
-            GenericOwnerType.Person
+            GenericOwnerType.USER
             if repo.owner.type == "User"
-            else GenericOwnerType.Organization
+            else GenericOwnerType.ORGANIZATION
         )
 
         return GenericOwner(

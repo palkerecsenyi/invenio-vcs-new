@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # This file is part of Invenio.
-# Copyright (C) 2025 CERN.
+# Copyright (C) 2025-2026 CERN.
 #
 # Invenio is free software; you can redistribute it and/or modify it
 # under the terms of the MIT License; see LICENSE file for more details.
@@ -18,6 +18,7 @@ import gitlab
 import gitlab.const
 import requests
 from flask import current_app
+from invenio_i18n import gettext as _
 from invenio_oauthclient import current_oauthclient
 from werkzeug.utils import cached_property
 
@@ -82,21 +83,23 @@ class GitLabProviderFactory(RepositoryServiceProviderFactory):
             icon="gitlab",
             repository_name="project",
             repository_name_plural="projects",
-            # The base URL inside this doesn't get updated if `base_url` is overrided in update_config_override.
+            # The base URL inside this doesn't get updated if `base_url` is overridden in update_config_override.
             # If you change the base URL after calling the constructor, make sure to change this too.
-            release_docs_link="{}/help/user/project/releases/_index.md".format(
-                base_url
+            release_docs_link=f"{base_url}/help/user/project/releases/_index.md",
+            repo_list_message=_(
+                "If your project does not show up in the list, please ensure you have at least the 'Maintainer' role on the project or its group."
             ),
+            repo_list_info_link=f"{base_url}/help/user/permissions.md#project-permissions",
         )
 
-        self._config = dict()
-        self._config.update(shared_validation_token="")
-        self._config.update(config)
+        self._gitlab_specific_config = dict()
+        self._gitlab_specific_config.update(shared_validation_token="")
+        self._gitlab_specific_config.update(config)
 
     def update_config_override(self, config_override: dict):
         """Allow overriding GitLab-specific config options."""
         super().update_config_override(config_override)
-        self._config.update(config_override.get("config", {}))
+        self._gitlab_specific_config.update(config_override.get("config", {}))
 
     def _account_info_handler(self, remote, resp: dict):
         """Helper for the OAuth client."""
@@ -140,11 +143,11 @@ class GitLabProviderFactory(RepositoryServiceProviderFactory):
                 view="invenio_oauthclient.handlers:signup_handler",
             ),
             params=dict(
-                base_url="{}/api/v4/".format(self.base_url),
+                base_url=f"{self.base_url}/api/v4/",
                 request_token_url=None,
-                access_token_url="{}/oauth/token".format(self.base_url),
+                access_token_url=f"{self.base_url}/oauth/token",
                 access_token_method="POST",
-                authorize_url="{}/oauth/authorize".format(self.base_url),
+                authorize_url=f"{self.base_url}/oauth/authorize",
                 app_key=self.credentials_key,
             ),
         )
@@ -152,35 +155,33 @@ class GitLabProviderFactory(RepositoryServiceProviderFactory):
     @property
     def config(self):
         """Returns the GitLab-specific config dict."""
-        return self._config
+        return self._gitlab_specific_config
 
     def url_for_repository(self, repository_name: str) -> str:
         """URL for viewing a repository."""
-        return "{}/{}".format(self.base_url, repository_name)
+        return f"{self.base_url}/{repository_name}"
 
     def url_for_release(
         self, repository_name: str, release_id: str, release_tag: str
     ) -> str:
         """URL for viewing a release."""
-        return "{}/{}/-/releases/{}".format(self.base_url, repository_name, release_tag)
+        return f"{self.base_url}/{repository_name}/-/releases/{release_tag}"
 
     def url_for_tag(self, repository_name, tag_name) -> str:
         """The URL for viewing a tag."""
-        return "{}/{}/-/tags/{}".format(self.base_url, repository_name, tag_name)
+        return f"{self.base_url}/{repository_name}/-/tags/{tag_name}"
 
     def url_for_new_file(self, repository_name, branch_name, file_name) -> str:
         """The URL for creating a new file in the web editor."""
-        return "{}/{}/-/new/{}/?file_name={}".format(
-            self.base_url, repository_name, branch_name, file_name
-        )
+        return f"{self.base_url}/{repository_name}/-/new/{branch_name}/?file_name={file_name}"
 
     def url_for_new_release(self, repository_name) -> str:
         """The URL for creating a new release."""
-        return "{}/{}/-/releases/new".format(self.base_url, repository_name)
+        return f"{self.base_url}/{repository_name}/-/releases/new"
 
     def url_for_new_repo(self) -> str:
         """The URL for creating a new repository."""
-        return "{}/projects/new".format(self.base_url)
+        return f"{self.base_url}/projects/new"
 
     def webhook_is_create_release_event(self, event_payload: dict[str, Any]):
         """Identify if the webhook payload is one we want to use."""
@@ -350,9 +351,9 @@ class GitLabProvider(RepositoryServiceProvider):
             path_name=proj.namespace["path"],
             display_name=proj.namespace["name"],
             type=(
-                GenericOwnerType.Person
+                GenericOwnerType.USER
                 if proj.namespace["kind"] == "user"
-                else GenericOwnerType.Organization
+                else GenericOwnerType.ORGANIZATION
             ),
         )
 
@@ -398,9 +399,7 @@ class GitLabProvider(RepositoryServiceProvider):
             # For some reason, we need to specify this as False explicitly. A default value of True seems to be
             # assumed but is not documented anywhere. For all other event types, default is False.
             "push_events": False,
-            "description": "Managed by {}. Please do not edit.".format(
-                current_app.config.get("THEME_SITENAME", "Invenio")
-            ),
+            "description": f"Managed by {current_app.config.get("THEME_SITENAME", "Invenio")}. Please do not edit.",
         }
 
         resp = proj.hooks.create(hook_data)

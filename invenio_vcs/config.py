@@ -23,6 +23,17 @@ VCS_PROVIDERS = []
 These will be visible to the user in their settings and they will be able to sync repositories
 from all of them. Multiple instances of different providers as well as of the same provider
 can be combined in this list, but each provider must have a unique ``id`` and ``credentials_key``.
+
+>>> from invenio_vcs.contrib.github import GitHubProviderFactory
+
+>>> _vcs_github = GitHubProviderFactory(
+...     base_url="https://github.com",
+...     webhook_receiver_url="https://example.com/api/hooks/receivers/github/events/?access_token={token}",
+... )
+
+>>> VCS_PROVIDERS = [_vcs_github]
+
+For more details, refer to the usage documentation.
 """
 
 VCS_PROVIDER_CONFIG_DICT = {}

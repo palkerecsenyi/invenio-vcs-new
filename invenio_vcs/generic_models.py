@@ -54,10 +54,10 @@ class GenericRepository:
             license_spdx=model.license_spdx,
         )
 
-    def to_model(self, model: Repository):
+    def update_model(self, model: Repository):
         """Update a Repository model with this generic repository's data."""
         for key, value in asdict(self).items():
-            if key in ["id"]:
+            if key == "id":
                 continue
 
             db_value = getattr(model, key)
@@ -87,7 +87,13 @@ class GenericRelease:
 
 @dataclass
 class GenericUser:
-    """Generic user representation."""
+    """Generic representation of a user.
+
+    This refers to a (usually) human end-user with credentials to log into the VCS,
+    but it can also be a bot account. It cannot however be an organisation/group/etc.
+    They can typically create repositories and become members of organisations.
+    They have a full account identity and are recognised as users by the VCS.
+    """
 
     id: str
     username: str
@@ -97,13 +103,20 @@ class GenericUser:
 class GenericOwnerType(Enum):
     """Types of repository owners."""
 
-    Person = 1
-    Organization = 2
+    USER = 1
+    """This corresponds to the type of entity represented by GenericUser."""
+
+    ORGANIZATION = 2
+    """A non-user entity that users can be members of and can thereby act on its behalf subject to permissions."""
 
 
 @dataclass
 class GenericOwner:
-    """Generic repository owner representation."""
+    """Generic repository owner representation.
+
+    This is an entity that owns a repository. For example, on GitHub this is either an organisation
+    or a user, while on GitLab this is a group/sub-group or a user.
+    """
 
     id: str
     path_name: str
@@ -113,7 +126,15 @@ class GenericOwner:
 
 @dataclass
 class GenericContributor:
-    """Generic contributor representation."""
+    """Generic contributor representation.
+
+    Contributors might be users, but they don't have to be. The low-level protocol used by the VCS
+    (usually Git) tracks who makes changes to the code, typically separately from the user/accounts
+    system of the VCS itself.
+    For example, when importing a Git repository from one VCS to another (e.g. from self-hosted GitLab
+    to gitlab.com), the contributors might not exist as users on the destination VCS. Despite this,
+    they are still reported as contributors.
+    """
 
     id: str
     username: str

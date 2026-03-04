@@ -221,7 +221,7 @@ class VCSService:
             vcs_repo = vcs_repos.get(db_repo.provider_id)
             if not vcs_repo:
                 continue
-            vcs_repo.to_model(db_repo)
+            vcs_repo.update_model(db_repo)
 
         # Remove ownership from repositories that the user has no longer
         # access to or have been deleted.

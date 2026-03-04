@@ -9,6 +9,7 @@
 
 import sqlalchemy as sa
 from alembic import op
+from invenio_db.shared import UTCDateTime
 from sqlalchemy_utils import JSONType, UUIDType
 
 # revision identifiers, used by Alembic.
@@ -39,8 +40,8 @@ def upgrade():
         sa.Column("hook", sa.String(length=255)),
         sa.Column("enabled_by_user_id", sa.Integer),
         sa.Column("record_community_id", UUIDType(), nullable=True),
-        sa.Column("created", sa.DateTime(), nullable=False),
-        sa.Column("updated", sa.DateTime(), nullable=False),
+        sa.Column("created", UTCDateTime(), nullable=False),
+        sa.Column("updated", UTCDateTime(), nullable=False),
         sa.PrimaryKeyConstraint("id", name=op.f("pk_vcs_repositories")),
         sa.ForeignKeyConstraint(
             ["enabled_by_user_id"],
@@ -58,8 +59,8 @@ def upgrade():
         "vcs_repository_users",
         sa.Column("repository_id", UUIDType()),
         sa.Column("user_id", sa.Integer()),
-        sa.Column("created", sa.DateTime(), nullable=False),
-        sa.Column("updated", sa.DateTime(), nullable=False),
+        sa.Column("created", UTCDateTime(), nullable=False),
+        sa.Column("updated", UTCDateTime(), nullable=False),
         sa.PrimaryKeyConstraint(
             "repository_id", "user_id", name=op.f("pk_vcs_repository_users")
         ),
@@ -97,8 +98,8 @@ def upgrade():
             "record_is_draft", sa.Boolean(), server_default="false", nullable=True
         ),
         sa.Column("status", sa.CHAR(1)),
-        sa.Column("created", sa.DateTime(), nullable=False),
-        sa.Column("updated", sa.DateTime(), nullable=False),
+        sa.Column("created", UTCDateTime(), nullable=False),
+        sa.Column("updated", UTCDateTime(), nullable=False),
         sa.PrimaryKeyConstraint("id", name=op.f("pk_vcs_releases")),
         sa.ForeignKeyConstraint(
             ["event_id"],

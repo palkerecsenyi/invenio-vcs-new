@@ -15,7 +15,7 @@ from enum import Enum
 
 from invenio_accounts.models import User
 from invenio_db import db
-from invenio_db.shared import Timestamp
+from invenio_db.shared import Timestamp, UTCDateTime
 from invenio_i18n import lazy_gettext as _
 from invenio_webhooks.models import Event
 from sqlalchemy import UniqueConstraint, delete, insert, select
@@ -78,8 +78,8 @@ repository_user_association = db.Table(
     db.Column(
         "user_id", db.Integer, db.ForeignKey("accounts_user.id"), primary_key=True
     ),
-    db.Column("created", db.DateTime, nullable=False),
-    db.Column("updated", db.DateTime, nullable=False),
+    db.Column("created", UTCDateTime, nullable=False),
+    db.Column("updated", UTCDateTime, nullable=False),
 )
 
 

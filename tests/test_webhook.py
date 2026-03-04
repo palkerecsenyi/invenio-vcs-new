@@ -127,7 +127,7 @@ def test_webhook_post_fail(
                 tag_name="v123.345",
                 created_at=utcnow(),
             ),
-            GenericOwner(id="123", path_name="fake_user", type=GenericOwnerType.Person),
+            GenericOwner(id="123", path_name="fake_user", type=GenericOwnerType.USER),
         )
     )
     headers = [("Content-Type", "application/json")]
