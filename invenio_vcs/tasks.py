@@ -138,6 +138,12 @@ def process_release(provider, release_id):
     )
     release = current_vcs.release_api_class(release_model, provider)
 
+    # Mark the release as processing so users can see the status in case
+    # `process_release` is a long-running method. We need to commit so the
+    # status is visible to the user before the full task finishes.
+    release_model.status = ReleaseStatus.PROCESSING
+    db.session.commit()
+
     matched_error_cls = None
     matched_ex = None
 
